@@ -30,8 +30,15 @@ public class MainActivity extends Activity {
         settings.setDomStorageEnabled(true);
         settings.setMediaPlaybackRequiresUserGesture(false);
         settings.setAllowFileAccess(true);
-        settings.setLoadWithOverviewMode(true);
-        settings.setUseWideViewPort(true);
+        // Ghim tỉ lệ 1:1 — không dùng wide viewport / overview mode vì WebView
+        // trên một số TV xử lý sai khiến trang bị phóng to lệch khỏi màn hình.
+        settings.setUseWideViewPort(false);
+        settings.setLoadWithOverviewMode(false);
+        settings.setSupportZoom(false);
+        settings.setBuiltInZoomControls(false);
+        settings.setDisplayZoomControls(false);
+        settings.setTextZoom(100);
+        webView.setInitialScale(0);
         webView.setBackgroundColor(0xFF12224A);
         webView.setWebViewClient(new WebViewClient());
         webView.addJavascriptInterface(new TvBridge(), "AndroidTV");

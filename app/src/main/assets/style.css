@@ -1,10 +1,16 @@
 /* ===== Thú Cưng Ảo — TV stylesheet (1080p, D-pad) ===== */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 
-html { font-size: 1.85vh; }
+/* Ghim trang đúng bằng cửa sổ hiển thị — chống lệch/tràn trên TV */
+html, body {
+  position: fixed; left: 0; top: 0;
+  width: 100%; height: 100%;
+  overflow: hidden;
+}
+
+html { font-size: 1.85vh; } /* JS sẽ ghi đè bằng px theo innerHeight */
 
 body {
-  width: 100vw; height: 100vh; overflow: hidden;
   font-family: "Baloo 2", "Quicksand", "Comic Sans MS", "Roboto", system-ui, sans-serif;
   font-weight: 700;
   color: #3A2E55;

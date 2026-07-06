@@ -3,6 +3,17 @@
    ============================================================ */
 'use strict';
 
+/* ---------------- Khớp giao diện với màn hình ----------------
+   Ghim cỡ chữ gốc (rem) theo chiều cao thật của cửa sổ thay vì
+   đơn vị vh — tránh lệch/phóng to trên WebView của một số TV. */
+function fitUI() {
+  const h = window.innerHeight || document.documentElement.clientHeight;
+  if (h > 0) document.documentElement.style.fontSize = (h * 0.0185).toFixed(2) + 'px';
+}
+window.addEventListener('resize', fitUI);
+window.addEventListener('orientationchange', fitUI);
+fitUI();
+
 /* ---------------- Âm thanh (WebAudio synth) ---------------- */
 const Sfx = {
   ctx: null,
