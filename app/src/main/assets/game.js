@@ -46,6 +46,8 @@ const Sfx = {
       case 'pad1':   T(659, .3, 'triangle', .18); break;
       case 'pad2':   T(784, .3, 'triangle', .18); break;
       case 'pad3':   T(440, .3, 'triangle', .18); break;
+      case 'warm':   T(620, .07, 'sine', .14); T(930, .1, 'sine', .12, .06); break;
+      case 'crack':  T(300, .06, 'square', .16); T(180, .1, 'square', .14, .07); break;
     }
   }
 };
@@ -94,6 +96,7 @@ function defaultState(species) {
   return {
     v: 1, species: species, level: 1, xp: 0, coins: 40,
     hunger: 80, happy: 80, energy: 90, clean: 90,
+    egg: true, warm: 0,
     lastSeen: Date.now(), lastGift: ''
   };
 }
@@ -114,11 +117,38 @@ function moodOf() {
   return avg >= 60 ? 'happy' : avg >= 32 ? 'ok' : 'sad';
 }
 
+/* ---------------- SVG trứng ---------------- */
+function svgEgg(species, crack) {
+  const c = SPECIES[species].c;
+  const spots = `
+    <circle cx="82" cy="100" r="9" fill="${c.body1}" opacity=".85"/>
+    <circle cx="120" cy="82" r="6" fill="${c.body1}" opacity=".85"/>
+    <circle cx="112" cy="128" r="11" fill="${c.body1}" opacity=".85"/>
+    <circle cx="78" cy="140" r="5" fill="${c.body1}" opacity=".85"/>`;
+  let cracks = '';
+  if (crack >= 1) cracks += `<path d="M88 52 l8 10 l-7 8 l9 9" stroke="${c.dark}" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+  if (crack >= 2) cracks += `<path d="M118 60 l-6 11 l9 7 l-6 10" stroke="${c.dark}" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M70 90 l10 6 l-4 10" stroke="${c.dark}" stroke-width="3" fill="none" stroke-linecap="round"/>`;
+  return `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <defs><radialGradient id="egg${species}" cx="38%" cy="28%" r="85%">
+      <stop offset="0%" stop-color="#FFFDF2"/><stop offset="100%" stop-color="#F2E3C2"/>
+    </radialGradient></defs>
+    <ellipse cx="100" cy="172" rx="62" ry="16" fill="#C89B57"/>
+    <ellipse cx="100" cy="166" rx="52" ry="12" fill="#E8C173"/>
+    <path d="M100 34 C 138 34 152 86 152 118 a52 52 0 0 1 -104 0 C48 86 62 34 100 34 Z" fill="url(#egg${species})" stroke="#D9C49A" stroke-width="2"/>
+    ${spots}${cracks}
+    <ellipse cx="82" cy="66" rx="12" ry="18" fill="#fff" opacity=".55" transform="rotate(-20 82 66)"/>
+  </svg>`;
+}
+
 /* ---------------- SVG thú cưng ---------------- */
 function svgPet(species, stage, mood, sleeping) {
-  const c = SPECIES[species].c;
+  const c = Object.assign({}, SPECIES[species].c);
+  /* cấp cao hơn = màu đậm, "ngầu" hơn */
+  if (stage === 2) c.body2 = c.accent;
+  const gid = 'g' + species + stage;
   const grad = `<defs>
-    <radialGradient id="g${species}" cx="38%" cy="30%" r="80%">
+    <radialGradient id="${gid}" cx="38%" cy="30%" r="80%">
       <stop offset="0%" stop-color="${c.body1}"/><stop offset="100%" stop-color="${c.body2}"/>
     </radialGradient>
   </defs>`;
@@ -176,9 +206,9 @@ function svgPet(species, stage, mood, sleeping) {
 
   /* tai theo cấp */
   const ears = stage === 0
-    ? `<circle cx="66" cy="62" r="12" fill="url(#g${species})"/><circle cx="134" cy="62" r="12" fill="url(#g${species})"/>`
-    : `<ellipse cx="62" cy="56" rx="12" ry="20" fill="url(#g${species})" transform="rotate(-18 62 56)"/>
-       <ellipse cx="138" cy="56" rx="12" ry="20" fill="url(#g${species})" transform="rotate(18 138 56)"/>
+    ? `<circle cx="66" cy="62" r="12" fill="url(#${gid})"/><circle cx="134" cy="62" r="12" fill="url(#${gid})"/>`
+    : `<ellipse cx="62" cy="56" rx="12" ry="20" fill="url(#${gid})" transform="rotate(-18 62 56)"/>
+       <ellipse cx="138" cy="56" rx="12" ry="20" fill="url(#${gid})" transform="rotate(18 138 56)"/>
        <ellipse cx="62" cy="58" rx="6" ry="11" fill="${c.belly}" transform="rotate(-18 62 58)"/>
        <ellipse cx="138" cy="58" rx="6" ry="11" fill="${c.belly}" transform="rotate(18 138 58)"/>`;
 
@@ -186,16 +216,17 @@ function svgPet(species, stage, mood, sleeping) {
   const feet = `<ellipse cx="74" cy="176" rx="15" ry="9" fill="${c.body2}"/>
                 <ellipse cx="126" cy="176" rx="15" ry="9" fill="${c.body2}"/>`;
   const arms = stage >= 1
-    ? `<ellipse cx="42" cy="132" rx="10" ry="16" fill="url(#g${species})" transform="rotate(20 42 132)"/>
-       <ellipse cx="158" cy="132" rx="10" ry="16" fill="url(#g${species})" transform="rotate(-20 158 132)"/>`
+    ? `<ellipse cx="42" cy="132" rx="10" ry="16" fill="url(#${gid})" transform="rotate(20 42 132)"/>
+       <ellipse cx="158" cy="132" rx="10" ry="16" fill="url(#${gid})" transform="rotate(-20 158 132)"/>`
     : '';
 
+  const hatScale = stage === 0 ? 0.85 : stage === 1 ? 1.15 : 1.4;
   return `<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
     ${grad}
     ${wings}${tail}
     ${feet}
-    ${ears}${horns}${hat}
-    <circle cx="100" cy="118" r="${bodyR}" fill="url(#g${species})"/>
+    ${ears}${horns}<g transform="translate(100 52) scale(${hatScale}) translate(-100 -52)">${hat}</g>
+    <circle cx="100" cy="118" r="${bodyR}" fill="url(#${gid})"/>
     <ellipse cx="100" cy="140" rx="${bodyR * 0.62}" ry="${bodyR * 0.5}" fill="${c.belly}"/>
     ${arms}
     ${brows}${eyes}${cheeks}${mouth}
@@ -327,7 +358,11 @@ function showTitle() {
       if (k === 'ok') {
         Sfx.play('select');
         const a = fl.current().dataset.a;
-        if (a === 'continue') { S = load(); applyOfflineDecay(); showHome(); dailyGift(); }
+        if (a === 'continue') {
+          S = load();
+          if (S.egg) { showEggScreen(); }
+          else { applyOfflineDecay(); showHome(); dailyGift(); }
+        }
         else if (a === 'new') {
           if (hasSave) {
             showDialog({
@@ -360,17 +395,18 @@ function exitApp() {
 function showPick() {
   const app = document.getElementById('app');
   const keys = ['fire', 'water', 'leaf'];
+  const eggNames = { fire: 'Trứng Lửa', water: 'Trứng Nước', leaf: 'Trứng Lá' };
   app.innerHTML = `<div class="screen pick-screen">
-    <div class="pick-title">✨ Chọn bé thú của em! ✨</div>
+    <div class="pick-title">🥚 Chọn quả trứng bí ẩn! 🥚</div>
     <div class="pick-cards">
       ${keys.map(s => `<div class="pick-card" data-s="${s}">
-          <div class="petbox">${svgPet(s, 0, 'happy', false)}</div>
-          <h3>${SPECIES[s].stages[0]}</h3>
+          <div class="petbox">${svgEgg(s, 0)}</div>
+          <h3>${eggNames[s]}</h3>
           <div class="el">${SPECIES[s].el}</div>
-          <p>${SPECIES[s].desc}</p>
+          <p>Bé thú gì sẽ nở ra nhỉ?</p>
         </div>`).join('')}
     </div>
-    <div class="hint-bar">◀ ▶ Chọn &nbsp;•&nbsp; OK Nhận nuôi &nbsp;•&nbsp; BACK Quay lại</div>
+    <div class="hint-bar">◀ ▶ Chọn &nbsp;•&nbsp; OK Nhận trứng &nbsp;•&nbsp; BACK Quay lại</div>
   </div>`;
   const cards = Array.from(app.querySelectorAll('.pick-card'));
   const fl = focusList(cards, 1);
@@ -382,17 +418,122 @@ function showPick() {
         const sp = fl.current().dataset.s;
         Sfx.play('happy');
         showDialog({
-          title: `${SPECIES[sp].el.split(' ')[0]} ${SPECIES[sp].stages[0]}`,
-          text: `"Chào cậu! Tớ là ${SPECIES[sp].stages[0]}. Mình làm bạn nhé?"`,
-          html: `<div style="width:12rem;height:12rem;margin:0 auto 1rem">${svgPet(sp, 0, 'happy', false)}</div>`,
+          title: `🥚 ${eggNames[sp]}`,
+          text: 'Hãy ấp và vuốt ve để trứng nở ra bé thú nhé!',
+          html: `<div style="width:12rem;height:12rem;margin:0 auto 1rem">${svgEgg(sp, 0)}</div>`,
           buttons: [
-            { label: '💖 Nhận nuôi!', cb: () => { S = defaultState(sp); save(); Sfx.play('win'); showHome(); } },
+            { label: '💖 Nhận trứng!', cb: () => { S = defaultState(sp); save(); Sfx.play('win'); showEggScreen(); } },
             { label: 'Chọn lại', cb: () => {} }
           ]
         });
         return true;
       }
       if (k === 'back') { showTitle(); return true; }
+      return true;
+    }
+  });
+}
+
+/* ============================================================
+   MÀN HÌNH: ẤP TRỨNG
+   ============================================================ */
+function crackOf(warm) { return warm >= 75 ? 2 : warm >= 40 ? 1 : 0; }
+
+function showEggScreen() {
+  clearInterval(homeTimer); clearTimeout(chatTimer);
+  const app = document.getElementById('app');
+  const hour = new Date().getHours();
+  const night = hour >= 18 || hour < 6;
+  app.innerHTML = `<div class="screen home-screen ${night ? 'night' : ''}">
+    <div class="home-bg">
+      <div class="sun"></div>
+      <div class="cloud" style="top:10%;width:11rem;height:3.4rem;animation-duration:60s"></div>
+      <div class="cloud" style="top:22%;width:8rem;height:2.6rem;animation-duration:85s;animation-delay:-30s"></div>
+    </div>
+    <div class="petzone">
+      <div class="eggbox" id="eggbox">${svgEgg(S.species, crackOf(S.warm))}</div>
+      <div class="warm-meter">
+        <div class="lab">🔥 Ấp trứng: <span id="warmVal">${Math.round(S.warm)}</span>%</div>
+        <div class="bar"><i id="warmBar" style="width:${S.warm}%;background:linear-gradient(90deg,#FFC94D,#FF8A3D)"></i></div>
+      </div>
+      <div class="egg-hint">Bấm <b>OK</b> thật nhiều để ấp và vuốt ve trứng! 🥚💖</div>
+    </div>
+    <div class="hint-bar" style="color:#fff">OK Ấp trứng &nbsp;•&nbsp; BACK Thoát</div>
+  </div>`;
+  setMode({
+    name: 'egg',
+    onKey(k) {
+      if (k === 'ok') { warmEgg(); return true; }
+      if (k === 'back') {
+        showDialog({
+          title: '🚪 Tạm biệt?',
+          text: 'Quả trứng sẽ chờ em quay lại ấp tiếp đó!',
+          buttons: [
+            { label: '💖 Ấp tiếp', cb: () => {} },
+            { label: '👋 Về màn hình chính', cb: () => { save(); showTitle(); } },
+            { label: '🚪 Tắt game', cb: exitApp }
+          ]
+        });
+        return true;
+      }
+      return true;
+    }
+  });
+}
+
+function warmEgg() {
+  if (S.warm >= 100) return;
+  const before = crackOf(S.warm);
+  S.warm = clamp(S.warm + 7 + Math.random() * 5, 0, 100);
+  const after = crackOf(S.warm);
+  const box = document.getElementById('eggbox');
+  document.getElementById('warmVal').textContent = Math.round(S.warm);
+  document.getElementById('warmBar').style.width = S.warm + '%';
+  if (box) {
+    box.classList.remove('wob');
+    void box.offsetWidth; /* restart animation */
+    box.classList.add('wob');
+    if (after !== before) {
+      box.innerHTML = svgEgg(S.species, after);
+      Sfx.play('crack');
+      floatFx(after === 1 ? '✨ Có vết nứt rồi!' : '💥 Sắp nở rồi!!');
+    } else {
+      Sfx.play('warm');
+      if (Math.random() < 0.3) floatFx(['💖', '🔥', '✨', '🥰'][Math.floor(Math.random() * 4)]);
+    }
+  }
+  save();
+  if (S.warm >= 100) {
+    pushMode({ name: 'busy', onKey() { return true; } });
+    setTimeout(showHatch, 800);
+  }
+}
+
+function showHatch() {
+  S.egg = false;
+  S.coins += 20;
+  save();
+  Sfx.play('evolve');
+  const app = document.getElementById('app');
+  app.innerHTML = `<div class="screen evo-screen">
+    <div class="evo-title">🎉 TRỨNG NỞ RỒI! 🎉</div>
+    <div class="evo-pet">${svgPet(S.species, 0, 'happy', false)}</div>
+    <div class="evo-name">Chào em, tớ là ${SPECIES[S.species].stages[0]}!</div>
+    <div class="hint-bar" style="color:#fff">Bấm OK để bắt đầu chăm sóc bé 💖 (+20 xu)</div>
+  </div>`;
+  const scr = app.querySelector('.evo-screen');
+  const emo = ['🎉', '⭐', '✨', '🎊', '💖', '🥚'];
+  for (let i = 0; i < 26; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.textContent = emo[i % emo.length];
+    c.style.cssText = `left:${Math.random() * 100}%;animation-duration:${2.4 + Math.random() * 2.4}s;animation-delay:${Math.random() * 1.6}s`;
+    scr.appendChild(c);
+  }
+  setMode({
+    name: 'hatch',
+    onKey(k) {
+      if (k === 'ok' || k === 'back') { Sfx.play('select'); save(); showHome(); }
       return true;
     }
   });
@@ -406,7 +547,7 @@ let chatTimer = null;
 let lastDecay = 0;
 
 function applyOfflineDecay() {
-  if (!S) return;
+  if (!S || S.egg) return;
   const mins = Math.min((Date.now() - (S.lastSeen || Date.now())) / 60000, 720);
   if (mins > 1) {
     S.hunger = clamp(S.hunger - mins * 0.5, 25, 100);
@@ -441,6 +582,7 @@ const ACTIONS = [
 ];
 
 function showHome() {
+  if (S.egg) { showEggScreen(); return; }
   clearInterval(homeTimer); clearTimeout(chatTimer);
   const app = document.getElementById('app');
   const hour = new Date().getHours();
@@ -534,10 +676,15 @@ function updateHomeUI() {
   document.getElementById('lvlVal').textContent = S.level;
   document.getElementById('xpBar').style.width = clamp(S.xp / xpNeed(S.level) * 100, 0, 100) + '%';
   const box = document.getElementById('petbox');
-  const sig = S.species + stageOf(S.level) + moodOf();
+  const stage = stageOf(S.level);
+  const sig = S.species + stage + moodOf();
   if (box && box.dataset.sig !== sig) {
     box.dataset.sig = sig;
-    box.innerHTML = svgPet(S.species, stageOf(S.level), moodOf(), false);
+    box.innerHTML = svgPet(S.species, stage, moodOf(), false);
+    /* thú lớn dần theo cấp tiến hóa */
+    const sz = [22, 26, 30][stage];
+    const svg = box.querySelector('svg');
+    if (svg) { svg.style.width = sz + 'rem'; svg.style.height = sz + 'rem'; }
     document.getElementById('petname').textContent = petName();
   }
 }
@@ -685,7 +832,11 @@ function doSleep() {
   if (!app || !zone || !box) return;
   Sfx.play('sleep');
   app.classList.add('night');
+  const curSvg = box.querySelector('svg');
+  const keepW = curSvg ? curSvg.style.width : '';
   box.innerHTML = svgPet(S.species, stageOf(S.level), 'happy', true);
+  const newSvg = box.querySelector('svg');
+  if (newSvg && keepW) { newSvg.style.width = keepW; newSvg.style.height = keepW; }
   const zs = [];
   for (let i = 0; i < 3; i++) {
     const z = document.createElement('div');

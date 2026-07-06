@@ -6,12 +6,14 @@ Game nuôi thú ảo (phong cách Pokemon) dành cho trẻ tiểu học, chạy 
 
 ## 🎮 Chơi như thế nào?
 
-- **Chọn 1 trong 3 bé thú**: 🔥 Lửa Nhí, 💧 Giọt Nhí, 🍀 Mầm Nhí
+- **Chọn 1 trong 3 quả trứng bí ẩn** (🔥 Lửa / 💧 Nước / 🍀 Lá) rồi bấm OK để ấp —
+  trứng nứt dần và nở ra bé thú con!
 - **Chăm sóc thú**: cho ăn 🍎, tắm 🛁, cho ngủ 💤 — giữ 4 thanh chỉ số luôn xanh
 - **Chơi 2 mini game để kiếm xu**:
   - 🍎🧺 **Hứng Trái Cây** — di chuyển trái/phải hứng trái cây rơi, né hòn đá
   - 🌈🧠 **Bé Nhớ Giỏi** — nhìn màu nhấp nháy rồi bấm lại đúng thứ tự bằng D-pad
-- **Lên cấp và TIẾN HÓA**: đạt cấp 5 và cấp 10 để bé thú biến hình thành dạng mới!
+- **Lên cấp và TIẾN HÓA**: trứng → thú con → cấp 5 mọc tai/đuôi → cấp 10 thành rồng
+  có cánh, sừng, màu đậm hơn và to lớn hơn hẳn!
 - Quà tặng mỗi ngày, thú nói chuyện đáng yêu, hiệu ứng ngày/đêm theo giờ thật
 - Tự động lưu game — tắt tivi bật lại vẫn còn nguyên bé thú
 
