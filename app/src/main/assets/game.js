@@ -3,16 +3,37 @@
    ============================================================ */
 'use strict';
 
-/* ---------------- Khớp giao diện với màn hình ----------------
-   Ghim cỡ chữ gốc (rem) theo chiều cao thật của cửa sổ thay vì
-   đơn vị vh — tránh lệch/phóng to trên WebView của một số TV. */
-function fitUI() {
-  const h = window.innerHeight || document.documentElement.clientHeight;
-  if (h > 0) document.documentElement.style.fontSize = (h * 0.0185).toFixed(2) + 'px';
+/* ---------------- Khớp sân khấu với màn hình ----------------
+   Game vẽ trong #stage cố định 1600x900. Hàm này đo vùng nhìn thấy
+   THẬT (visualViewport — chính xác cả khi WebView bị zoom/báo sai
+   kích thước) rồi scale + căn giữa sân khấu vào đúng vùng đó.
+   Nhờ vậy game luôn hiện đủ 100% khung hình trên mọi TV. */
+const STAGE_W = 1600, STAGE_H = 900;
+window.__stageScale = 1;
+function fitStage() {
+  const stage = document.getElementById('stage');
+  if (!stage) return;
+  const vv = window.visualViewport;
+  const w  = (vv && vv.width)  || window.innerWidth  || document.documentElement.clientWidth  || STAGE_W;
+  const h  = (vv && vv.height) || window.innerHeight || document.documentElement.clientHeight || STAGE_H;
+  const ox = (vv && vv.offsetLeft) || 0;
+  const oy = (vv && vv.offsetTop)  || 0;
+  const s  = Math.min(w / STAGE_W, h / STAGE_H);
+  window.__stageScale = s;
+  const tx = ox + (w - STAGE_W * s) / 2;
+  const ty = oy + (h - STAGE_H * s) / 2;
+  stage.style.transform = 'translate(' + tx.toFixed(2) + 'px,' + ty.toFixed(2) + 'px) scale(' + s.toFixed(4) + ')';
 }
-window.addEventListener('resize', fitUI);
-window.addEventListener('orientationchange', fitUI);
-fitUI();
+window.addEventListener('resize', fitStage);
+window.addEventListener('orientationchange', fitStage);
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', fitStage);
+  window.visualViewport.addEventListener('scroll', fitStage);
+}
+document.addEventListener('DOMContentLoaded', fitStage);
+setTimeout(fitStage, 300);
+setTimeout(fitStage, 1500);
+fitStage();
 
 /* ---------------- Âm thanh (WebAudio synth) ---------------- */
 const Sfx = {
@@ -957,14 +978,17 @@ function startFruitGame() {
   </div>`;
 
   const canvas = document.getElementById('fruitCanvas');
-  /* vẽ theo pixel thật của màn hình (sắc nét trên TV 4K) */
-  const dpr = Math.min(window.devicePixelRatio || 1, 3);
-  const W = window.innerWidth;
-  const H = window.innerHeight;
-  canvas.width = Math.round(W * dpr);
-  canvas.height = Math.round(H * dpr);
+  /* toạ độ game theo sân khấu 1600x900; backing store theo pixel thật
+     của màn hình (dpr x tỉ lệ sân khấu) để sắc nét trên TV 4K */
+  const W = STAGE_W;
+  const H = STAGE_H;
+  const eff = Math.min((window.devicePixelRatio || 1) * (window.__stageScale || 1), 3) || 1;
+  canvas.width = Math.round(W * eff);
+  canvas.height = Math.round(H * eff);
+  canvas.style.width = W + 'px';
+  canvas.style.height = H + 'px';
   const ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
+  ctx.scale(eff, eff);
 
   const FRUITS = ['🍎', '🍌', '🍇', '🍓', '🍊', '🍉'];
   const petImg = new Image();

@@ -6,15 +6,26 @@ html, body {
   position: fixed; left: 0; top: 0;
   width: 100%; height: 100%;
   overflow: hidden;
+  background: #000;
 }
 
-html { font-size: 1.85vh; } /* JS sẽ ghi đè bằng px theo innerHeight */
+/* Toàn bộ game vẽ trong "sân khấu" cố định 1600x900,
+   JS đo vùng nhìn thấy thật rồi scale + căn giữa sân khấu vào đó.
+   1rem = 900 x 1.85% = 16.65px (cố định theo thiết kế). */
+html { font-size: 16.65px; }
+
+#stage {
+  position: absolute; left: 0; top: 0;
+  width: 1600px; height: 900px;
+  transform-origin: 0 0;
+  overflow: hidden;
+  background: #12224A;
+}
 
 body {
   font-family: "Baloo 2", "Quicksand", "Comic Sans MS", "Roboto", system-ui, sans-serif;
   font-weight: 700;
   color: #3A2E55;
-  background: #12224A;
   user-select: none; cursor: none;
 }
 
@@ -154,7 +165,7 @@ body {
 }
 .cloud::before { width: 55%; height: 160%; left: 12%; top: -70%; }
 .cloud::after  { width: 45%; height: 130%; right: 12%; top: -50%; }
-@keyframes drift { from { transform: translateX(-30vw); } to { transform: translateX(130vw); } }
+@keyframes drift { from { transform: translateX(-500px); } to { transform: translateX(2100px); } }
 
 .hud {
   position: absolute; top: 3.5%; left: 4%; right: 4%;
@@ -322,8 +333,8 @@ body {
 @keyframes evospin { from { transform: scale(.2) rotate(-360deg); filter: brightness(4);} to { transform: scale(1) rotate(0); filter: brightness(1);} }
 .evo-title { font-size: 4rem; color: #fff; text-shadow: 0 .4rem 0 rgba(120,60,160,.6); animation: pop .5s ease; }
 .evo-name  { font-size: 3rem; color: #6A2FB6; }
-.confetti { position: absolute; top: -6vh; font-size: 2.6rem; animation: confall linear forwards; }
-@keyframes confall { to { transform: translateY(115vh) rotate(720deg); } }
+.confetti { position: absolute; top: -60px; font-size: 2.6rem; animation: confall linear forwards; }
+@keyframes confall { to { transform: translateY(1040px) rotate(720deg); } }
 
 .star-burst { position: absolute; font-size: 3rem; animation: burst 1s ease forwards; }
 @keyframes burst { from { transform: translate(0,0) scale(.3); opacity: 1;} to { transform: translate(var(--dx),var(--dy)) scale(1.3); opacity: 0;} }
