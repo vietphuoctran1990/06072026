@@ -946,9 +946,14 @@ function startFruitGame() {
   </div>`;
 
   const canvas = document.getElementById('fruitCanvas');
-  const W = canvas.width = window.innerWidth;
-  const H = canvas.height = window.innerHeight;
+  /* vẽ theo pixel thật của màn hình (sắc nét trên TV 4K) */
+  const dpr = Math.min(window.devicePixelRatio || 1, 3);
+  const W = window.innerWidth;
+  const H = window.innerHeight;
+  canvas.width = Math.round(W * dpr);
+  canvas.height = Math.round(H * dpr);
   const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
 
   const FRUITS = ['🍎', '🍌', '🍇', '🍓', '🍊', '🍉'];
   const petImg = new Image();
