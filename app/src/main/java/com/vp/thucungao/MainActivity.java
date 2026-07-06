@@ -2,10 +2,10 @@ package com.vp.thucungao;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.os.Build;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.view.KeyEvent;
-import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.webkit.JavascriptInterface;
@@ -43,27 +43,12 @@ public class MainActivity extends Activity {
         webView.setWebViewClient(new WebViewClient());
         webView.addJavascriptInterface(new TvBridge(), "AndroidTV");
 
+        // Nền cửa sổ đen — không dùng cờ immersive (một số firmware TV
+        // xử lý sai các cờ này khiến cửa sổ bị dịch lệch khỏi màn hình).
+        getWindow().setBackgroundDrawable(new ColorDrawable(Color.BLACK));
         setContentView(webView);
-        hideSystemUI();
         webView.loadUrl("file:///android_asset/index.html");
         webView.requestFocus();
-    }
-
-    private void hideSystemUI() {
-        View decor = getWindow().getDecorView();
-        decor.setSystemUiVisibility(
-                View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                        | View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                        | View.SYSTEM_UI_FLAG_FULLSCREEN);
-    }
-
-    @Override
-    public void onWindowFocusChanged(boolean hasFocus) {
-        super.onWindowFocusChanged(hasFocus);
-        if (hasFocus) hideSystemUI();
     }
 
     @Override

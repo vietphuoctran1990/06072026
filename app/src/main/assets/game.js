@@ -10,6 +10,17 @@
    Nhờ vậy game luôn hiện đủ 100% khung hình trên mọi TV. */
 const STAGE_W = 1600, STAGE_H = 900;
 window.__stageScale = 1;
+
+/* Căn chỉnh thủ công (lưu theo từng TV) — dành cho các TV mà cửa sổ
+   app bị firmware đặt lệch/phóng sai so với màn hình vật lý. */
+const CALIB_KEY = 'thucungao_calib_v1';
+let CAL = { s: 1, dx: 0, dy: 0 };
+try {
+  const c = JSON.parse(localStorage.getItem(CALIB_KEY));
+  if (c && typeof c.s === 'number' && c.s > 0.3 && c.s < 1.5) CAL = c;
+} catch (e) {}
+function saveCalib() { try { localStorage.setItem(CALIB_KEY, JSON.stringify(CAL)); } catch (e) {} }
+
 function fitStage() {
   const stage = document.getElementById('stage');
   if (!stage) return;
@@ -18,10 +29,10 @@ function fitStage() {
   const h  = (vv && vv.height) || window.innerHeight || document.documentElement.clientHeight || STAGE_H;
   const ox = (vv && vv.offsetLeft) || 0;
   const oy = (vv && vv.offsetTop)  || 0;
-  const s  = Math.min(w / STAGE_W, h / STAGE_H);
+  const s  = Math.min(w / STAGE_W, h / STAGE_H) * CAL.s;
   window.__stageScale = s;
-  const tx = ox + (w - STAGE_W * s) / 2;
-  const ty = oy + (h - STAGE_H * s) / 2;
+  const tx = ox + (w - STAGE_W * s) / 2 + CAL.dx;
+  const ty = oy + (h - STAGE_H * s) / 2 + CAL.dy;
   stage.style.transform = 'translate(' + tx.toFixed(2) + 'px,' + ty.toFixed(2) + 'px) scale(' + s.toFixed(4) + ')';
 }
 window.addEventListener('resize', fitStage);
@@ -377,6 +388,7 @@ function showTitle() {
     <div class="menu">
       ${hasSave ? '<button class="btn" data-a="continue"><span class="ic">▶️</span> Chơi tiếp</button>' : ''}
       <button class="btn" data-a="new"><span class="ic">🐣</span> ${hasSave ? 'Nuôi thú mới' : 'Bắt đầu'}</button>
+      <button class="btn" data-a="calib"><span class="ic">📐</span> Căn màn hình</button>
       <button class="btn" data-a="exit"><span class="ic">🚪</span> Thoát</button>
     </div>
     <div class="hint-bar">🔼 🔽 Chọn &nbsp;•&nbsp; OK Xác nhận</div>
@@ -407,10 +419,70 @@ function showTitle() {
             });
           } else showPick();
         }
+        else if (a === 'calib') showCalib();
         else if (a === 'exit') exitApp();
         return true;
       }
       if (k === 'back') return false; /* cho phép thoát app */
+      return true;
+    }
+  });
+}
+
+/* ============================================================
+   MÀN HÌNH: CĂN CHỈNH MÀN HÌNH (cho TV hiển thị lệch)
+   ============================================================ */
+function showCalib() {
+  const app = document.getElementById('app');
+  app.innerHTML = `<div class="screen calib-screen">
+    <div class="calib-frame">
+      <span class="corner tl">◤</span><span class="corner tr">◥</span>
+      <span class="corner bl">◣</span><span class="corner br">◢</span>
+    </div>
+    <div class="calib-center">
+      <h2 id="calMode"></h2>
+      <p id="calVal"></p>
+      <p class="calib-help">
+        Chỉnh đến khi thấy <b>ĐỦ 4 GÓC VÀNG</b> của khung trên màn hình tivi<br>
+        <b>OK</b>: đổi chế độ &nbsp;•&nbsp; <b>BACK</b>: lưu &amp; quay lại
+      </p>
+    </div>
+  </div>`;
+  let mode = 0;
+  const modes = [
+    '🔍 TO / NHỎ — bấm ◀ ▶',
+    '↔️ DỊCH NGANG — bấm ◀ ▶',
+    '↕️ DỊCH DỌC — bấm ▲ ▼',
+    '🔄 ĐẶT LẠI — bấm ▶'
+  ];
+  function upd() {
+    document.getElementById('calMode').textContent = modes[mode];
+    document.getElementById('calVal').textContent =
+      `Cỡ ${(CAL.s * 100).toFixed(0)}%  •  Ngang ${CAL.dx > 0 ? '+' : ''}${CAL.dx}  •  Dọc ${CAL.dy > 0 ? '+' : ''}${CAL.dy}`;
+    saveCalib();
+    fitStage();
+  }
+  upd();
+  setMode({
+    name: 'calib',
+    onKey(k) {
+      if (k === 'ok') { mode = (mode + 1) % modes.length; Sfx.play('select'); upd(); return true; }
+      if (k === 'back') { saveCalib(); Sfx.play('select'); showTitle(); return true; }
+      const step = 8;
+      if (mode === 0) {
+        if (k === 'left')  CAL.s = Math.max(0.5, +(CAL.s - 0.02).toFixed(3));
+        if (k === 'right') CAL.s = Math.min(1.3, +(CAL.s + 0.02).toFixed(3));
+      } else if (mode === 1) {
+        if (k === 'left')  CAL.dx = Math.max(-800, CAL.dx - step);
+        if (k === 'right') CAL.dx = Math.min(800, CAL.dx + step);
+      } else if (mode === 2) {
+        if (k === 'up')   CAL.dy = Math.max(-800, CAL.dy - step);
+        if (k === 'down') CAL.dy = Math.min(800, CAL.dy + step);
+      } else if (mode === 3) {
+        if (k === 'right') CAL = { s: 1, dx: 0, dy: 0 };
+      }
+      Sfx.play('move');
+      upd();
       return true;
     }
   });
