@@ -27,7 +27,9 @@ Game nuôi thú ảo (phong cách Pokemon) dành cho trẻ tiểu học, chạy 
 
 ## 🔧 Kỹ thuật
 
-- App Android TV thuần Java (không dependency ngoài) + game HTML5 chạy trong WebView
+- App Android TV **thuần native Java, vẽ trực tiếp bằng Canvas** (không WebView,
+  không dependency ngoài) — tránh hoàn toàn các lỗi hiển thị lệch của WebView
+  trên một số dòng TV
 - `minSdk 21`, `targetSdk 34` — tương thích Android TV 5.0 → 14
 - Có category `LEANBACK_LAUNCHER`, banner TV, không yêu cầu màn hình cảm ứng
 - Build tự động bằng GitHub Actions (`.github/workflows/build-apk.yml`),

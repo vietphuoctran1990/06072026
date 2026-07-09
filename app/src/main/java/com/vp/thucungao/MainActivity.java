@@ -1,6 +1,5 @@
 package com.vp.thucungao;
 
-import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
@@ -8,79 +7,51 @@ import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.Window;
 import android.view.WindowManager;
-import android.webkit.JavascriptInterface;
-import android.webkit.WebSettings;
-import android.webkit.WebView;
-import android.webkit.WebViewClient;
 
+/**
+ * Thú Cưng Ảo — bản native, vẽ thuần Canvas (không WebView).
+ * Activity chỉ nhận phím từ remote và chuyển cho GameView.
+ */
 public class MainActivity extends Activity {
 
-    private WebView webView;
+    private GameView gameView;
 
-    @SuppressLint("SetJavaScriptEnabled")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-
-        webView = new WebView(this);
-        WebSettings settings = webView.getSettings();
-        settings.setJavaScriptEnabled(true);
-        settings.setDomStorageEnabled(true);
-        settings.setMediaPlaybackRequiresUserGesture(false);
-        settings.setAllowFileAccess(true);
-        // Ghim tỉ lệ 1:1 — không dùng wide viewport / overview mode vì WebView
-        // trên một số TV xử lý sai khiến trang bị phóng to lệch khỏi màn hình.
-        settings.setUseWideViewPort(false);
-        settings.setLoadWithOverviewMode(false);
-        settings.setSupportZoom(false);
-        settings.setBuiltInZoomControls(false);
-        settings.setDisplayZoomControls(false);
-        settings.setTextZoom(100);
-        webView.setInitialScale(0);
-        webView.setBackgroundColor(0xFF12224A);
-        webView.setWebViewClient(new WebViewClient());
-        webView.addJavascriptInterface(new TvBridge(), "AndroidTV");
-
-        // Nền cửa sổ đen — không dùng cờ immersive (một số firmware TV
-        // xử lý sai các cờ này khiến cửa sổ bị dịch lệch khỏi màn hình).
         getWindow().setBackgroundDrawable(new ColorDrawable(Color.BLACK));
-        setContentView(webView);
-        webView.loadUrl("file:///android_asset/index.html");
-        webView.requestFocus();
+        gameView = new GameView(this);
+        setContentView(gameView);
     }
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_BACK) {
-            // Give the game a chance to navigate back internally.
-            webView.evaluateJavascript(
-                    "(window.handleBack ? window.handleBack() : false)",
-                    value -> {
-                        if (!"true".equals(value)) finish();
-                    });
-            return true;
+        int k = -1;
+        switch (keyCode) {
+            case KeyEvent.KEYCODE_DPAD_UP: k = GameView.K_UP; break;
+            case KeyEvent.KEYCODE_DPAD_DOWN: k = GameView.K_DOWN; break;
+            case KeyEvent.KEYCODE_DPAD_LEFT: k = GameView.K_LEFT; break;
+            case KeyEvent.KEYCODE_DPAD_RIGHT: k = GameView.K_RIGHT; break;
+            case KeyEvent.KEYCODE_DPAD_CENTER:
+            case KeyEvent.KEYCODE_ENTER:
+            case KeyEvent.KEYCODE_NUMPAD_ENTER:
+            case KeyEvent.KEYCODE_BUTTON_A: k = GameView.K_OK; break;
+            case KeyEvent.KEYCODE_BACK:
+            case KeyEvent.KEYCODE_ESCAPE:
+            case KeyEvent.KEYCODE_BUTTON_B: k = GameView.K_BACK; break;
+            default: return super.onKeyDown(keyCode, event);
         }
-        return super.onKeyDown(keyCode, event);
+        boolean handled = gameView.key(k);
+        if (gameView.exitRequested) { finish(); return true; }
+        if (k == GameView.K_BACK && !handled) { finish(); return true; }
+        return true;
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        webView.evaluateJavascript("window.gamePause && window.gamePause()", null);
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        webView.evaluateJavascript("window.gameResume && window.gameResume()", null);
-    }
-
-    private class TvBridge {
-        @JavascriptInterface
-        public void exitApp() {
-            runOnUiThread(MainActivity.this::finish);
-        }
+        if (gameView != null) gameView.saveAll();
     }
 }
